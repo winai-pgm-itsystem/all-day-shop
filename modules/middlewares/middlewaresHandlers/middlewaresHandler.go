@@ -47,7 +47,7 @@ func (h *middlewaresHandler) Cors() fiber.Handler {
 
 func (h *middlewaresHandler) RouterCheck() fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		return entities.NewReponse(c).Error(
+		return entities.NewResponse(c).Error(
 			fiber.ErrNotFound.Code,
 			string(routerCheckErr),
 			"router not found",

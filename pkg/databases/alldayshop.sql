@@ -11,7 +11,7 @@ CREATE TABLE "users" (
 CREATE TABLE "oauth" (
   "id" varchar PRIMARY KEY,
   "user_id" varchar,
-  "asscess_token" varchar,
+  "access_token" varchar,
   "refresh_token" varchar,
   "create_at" timestamp,
   "update_at" timestamp

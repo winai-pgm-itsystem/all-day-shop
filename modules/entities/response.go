@@ -24,7 +24,7 @@ type ErrorResponse struct {
 	Msg     string `json:"message"`
 }
 
-func NewReponse(c *fiber.Ctx) IResponse {
+func NewResponse(c *fiber.Ctx) IResponse {
 	return &Response{
 		Context: c,
 	}

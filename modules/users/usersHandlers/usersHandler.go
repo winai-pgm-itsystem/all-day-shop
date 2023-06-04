@@ -11,11 +11,15 @@ import (
 type userHandlersErrCode string
 
 const (
-	signUpCustomerErr userHandlersErrCode = "users-001"
+	signUpCustomerErr  userHandlersErrCode = "users-001"
+	signInErr          userHandlersErrCode = "users-002"
+	refreshPassportErr userHandlersErrCode = "users-003"
 )
 
 type IUersHandler interface {
 	SignUpCustomer(c *fiber.Ctx) error
+	SignIn(c *fiber.Ctx) error
+	RefreshPassport(c *fiber.Ctx) error
 }
 
 type usersHandler struct {
@@ -34,7 +38,7 @@ func (h *usersHandler) SignUpCustomer(c *fiber.Ctx) error {
 	//Request body
 	req := new(users.UserRegisterReq)
 	if err := c.BodyParser(req); err != nil {
-		return entities.NewReponse(c).Error(
+		return entities.NewResponse(c).Error(
 			fiber.ErrBadRequest.Code,
 			string(signUpCustomerErr),
 			err.Error(),
@@ -43,7 +47,7 @@ func (h *usersHandler) SignUpCustomer(c *fiber.Ctx) error {
 
 	//Email validation
 	if !req.IsEmail() {
-		return entities.NewReponse(c).Error(
+		return entities.NewResponse(c).Error(
 			fiber.ErrBadRequest.Code,
 			string(signUpCustomerErr),
 			"email pattern is valid",
@@ -55,19 +59,19 @@ func (h *usersHandler) SignUpCustomer(c *fiber.Ctx) error {
 	if err != nil {
 		switch err.Error() {
 		case "username has been used":
-			return entities.NewReponse(c).Error(
+			return entities.NewResponse(c).Error(
 				fiber.ErrBadRequest.Code,
 				string(signUpCustomerErr),
 				err.Error(),
 			).Res()
 		case "email has been used":
-			return entities.NewReponse(c).Error(
+			return entities.NewResponse(c).Error(
 				fiber.ErrBadRequest.Code,
 				string(signUpCustomerErr),
 				err.Error(),
 			).Res()
 		default:
-			return entities.NewReponse(c).Error(
+			return entities.NewResponse(c).Error(
 				fiber.ErrInternalServerError.Code,
 				string(signUpCustomerErr),
 				err.Error(),
@@ -76,5 +80,50 @@ func (h *usersHandler) SignUpCustomer(c *fiber.Ctx) error {
 
 	}
 
-	return entities.NewReponse(c).Success(fiber.StatusCreated, result).Res()
+	return entities.NewResponse(c).Success(fiber.StatusCreated, result).Res()
+}
+
+func (h *usersHandler) SignIn(c *fiber.Ctx) error {
+
+	req := new(users.UserCredential)
+	if err := c.BodyParser(req); err != nil {
+		return entities.NewResponse(c).Error(
+			fiber.ErrBadGateway.Code,
+			string(signInErr),
+			err.Error(),
+		).Res()
+	}
+
+	passport, err := h.usersUsecase.GetPassport(req)
+	if err != nil {
+		return entities.NewResponse(c).Error(
+			fiber.ErrBadGateway.Code,
+			string(signInErr),
+			err.Error(),
+		).Res()
+	}
+
+	return entities.NewResponse(c).Success(fiber.StatusOK, passport).Res()
+}
+
+func (h *usersHandler) RefreshPassport(c *fiber.Ctx) error {
+	req := new(users.UserRefreshCredential)
+	if err := c.BodyParser(req); err != nil {
+		return entities.NewResponse(c).Error(
+			fiber.ErrBadRequest.Code,
+			string(refreshPassportErr),
+			err.Error(),
+		).Res()
+	}
+
+	passport, err := h.usersUsecase.RefreshPassport(req)
+	if err != nil {
+		return entities.NewResponse(c).Error(
+			fiber.ErrBadRequest.Code,
+			string(refreshPassportErr),
+			err.Error(),
+		).Res()
+	}
+
+	return entities.NewResponse(c).Success(fiber.StatusOK, passport).Res()
 }

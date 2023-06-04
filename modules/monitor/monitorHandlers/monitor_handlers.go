@@ -27,5 +27,5 @@ func (h *monitorHandlers) HealthCheck(c *fiber.Ctx) error {
 		Name:    h.cfg.App().Name(),
 		Version: h.cfg.App().Version(),
 	}
-	return entities.NewReponse(c).Success(fiber.StatusOK, res).Res()
+	return entities.NewResponse(c).Success(fiber.StatusOK, res).Res()
 }
