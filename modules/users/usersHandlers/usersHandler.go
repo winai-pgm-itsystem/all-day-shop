@@ -6,15 +6,18 @@ import (
 	"github.com/winai-pgm-itsystem/all-day-shop/modules/entities"
 	"github.com/winai-pgm-itsystem/all-day-shop/modules/users"
 	"github.com/winai-pgm-itsystem/all-day-shop/modules/users/usersUsecases"
+	"github.com/winai-pgm-itsystem/all-day-shop/pkg/alldayauth"
 )
 
 type userHandlersErrCode string
 
 const (
-	signUpCustomerErr  userHandlersErrCode = "users-001"
-	signInErr          userHandlersErrCode = "users-002"
-	refreshPassportErr userHandlersErrCode = "users-003"
-	signOutErr         userHandlersErrCode = "users-004"
+	signUpCustomerErr    userHandlersErrCode = "users-001"
+	signInErr            userHandlersErrCode = "users-002"
+	refreshPassportErr   userHandlersErrCode = "users-003"
+	signOutErr           userHandlersErrCode = "users-004"
+	signUpAdminErr       userHandlersErrCode = "users-005"
+	generateAdminTokenrr userHandlersErrCode = "users-006"
 )
 
 type IUersHandler interface {
@@ -22,6 +25,8 @@ type IUersHandler interface {
 	SignIn(c *fiber.Ctx) error
 	RefreshPassport(c *fiber.Ctx) error
 	SignOut(c *fiber.Ctx) error
+	SignUpAdmin(c *fiber.Ctx) error
+	GenerateAdminToken(c *fiber.Ctx) error
 }
 
 type usersHandler struct {
@@ -83,6 +88,74 @@ func (h *usersHandler) SignUpCustomer(c *fiber.Ctx) error {
 	}
 
 	return entities.NewResponse(c).Success(fiber.StatusCreated, result).Res()
+}
+
+func (h *usersHandler) SignUpAdmin(c *fiber.Ctx) error {
+	//Request body
+	req := new(users.UserRegisterReq)
+	if err := c.BodyParser(req); err != nil {
+		return entities.NewResponse(c).Error(
+			fiber.ErrBadRequest.Code,
+			string(signUpCustomerErr),
+			err.Error(),
+		).Res()
+	}
+
+	//Email validation
+	if !req.IsEmail() {
+		return entities.NewResponse(c).Error(
+			fiber.ErrBadRequest.Code,
+			string(signUpCustomerErr),
+			"email pattern is valid",
+		).Res()
+	}
+
+	//Insert
+	result, err := h.usersUsecase.InsertAdmin(req)
+	if err != nil {
+		switch err.Error() {
+		case "username has been used":
+			return entities.NewResponse(c).Error(
+				fiber.ErrBadRequest.Code,
+				string(signUpCustomerErr),
+				err.Error(),
+			).Res()
+		case "email has been used":
+			return entities.NewResponse(c).Error(
+				fiber.ErrBadRequest.Code,
+				string(signUpCustomerErr),
+				err.Error(),
+			).Res()
+		default:
+			return entities.NewResponse(c).Error(
+				fiber.ErrInternalServerError.Code,
+				string(signUpCustomerErr),
+				err.Error(),
+			).Res()
+		}
+
+	}
+
+	return entities.NewResponse(c).Success(fiber.StatusCreated, result).Res()
+
+}
+
+func (h *usersHandler) GenerateAdminToken(c *fiber.Ctx) error {
+	adminToken, err := alldayauth.NewAlldayAuth(alldayauth.Admin, h.cfg.Jwt(), nil)
+	if err != nil {
+		return entities.NewResponse(c).Error(
+			fiber.ErrInternalServerError.Code,
+			string(generateAdminTokenrr),
+			err.Error(),
+		).Res()
+	}
+
+	return entities.NewResponse(c).Success(fiber.StatusOK, &struct {
+		Token string `json:"token"`
+	}{
+		Token: adminToken.SignToken(),
+	},
+	).Res()
 }
 
 func (h *usersHandler) SignIn(c *fiber.Ctx) error {

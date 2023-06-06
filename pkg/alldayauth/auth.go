@@ -25,12 +25,20 @@ type alldayAuth struct {
 	cfg       config.IJwtConfig
 }
 
+type alldayAdmin struct {
+	*alldayAuth
+}
+
 type alldayMapClaims struct {
 	Claims *users.UserClaims `josn:"claims"`
 	jwt.RegisteredClaims
 }
 
 type IAlldayAuth interface {
+	SignToken() string
+}
+
+type IAlldayAdmin interface {
 	SignToken() string
 }
 
@@ -48,14 +56,45 @@ func (a *alldayAuth) SignToken() string {
 	return ss
 }
 
-func ParseToken(cfg config.IJwtConfig, tokenString string) (*alldayMapClaims, error) {
+func (a *alldayAdmin) SignToken() string {
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, a.mapClaims)
+	ss, _ := token.SignedString(a.cfg.AdminKey())
+	return ss
+}
 
+func ParseToken(cfg config.IJwtConfig, tokenString string) (*alldayMapClaims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &alldayMapClaims{}, func(t *jwt.Token) (interface{}, error) {
 		method, ok := t.Method.(*jwt.SigningMethodHMAC)
 		if !ok || method.Alg() != jwt.SigningMethodHS256.Alg() {
 			return nil, fmt.Errorf("signing method is invalid")
 		}
 		return cfg.SecretKey(), nil
+	})
+
+	if err != nil {
+		if errors.Is(err, jwt.ErrTokenMalformed) {
+			return nil, fmt.Errorf("token format is invalid")
+		} else if errors.Is(err, jwt.ErrTokenExpired) {
+			return nil, fmt.Errorf("token had expired")
+		} else {
+			return nil, fmt.Errorf("parse token failed: %v", err)
+		}
+	}
+	if claims, ok := token.Claims.(*alldayMapClaims); ok {
+		return claims, nil
+	} else {
+		return nil, fmt.Errorf("claims type is invalid")
+	}
+
+}
+
+func ParseAdminToken(cfg config.IJwtConfig, tokenString string) (*alldayMapClaims, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &alldayMapClaims{}, func(t *jwt.Token) (interface{}, error) {
+		method, ok := t.Method.(*jwt.SigningMethodHMAC)
+		if !ok || method.Alg() != jwt.SigningMethodHS256.Alg() {
+			return nil, fmt.Errorf("signing method is invalid")
+		}
+		return cfg.AdminKey(), nil
 	})
 
 	if err != nil {
@@ -99,6 +138,8 @@ func NewAlldayAuth(tokenType TonkenType, cfg config.IJwtConfig, claims *users.Us
 		return newAccessToken(cfg, claims), nil
 	case Refresh:
 		return newRefreshToken(cfg, claims), nil
+	case Admin:
+		return newAdminToken(cfg), nil
 	default:
 		return nil, fmt.Errorf("unkhnow token type")
 	}
@@ -133,6 +174,25 @@ func newRefreshToken(cfg config.IJwtConfig, claims *users.UserClaims) IAlldayAut
 				ExpiresAt: jwtTimeDurationCal(cfg.RefreshExpiresAt()),
 				NotBefore: jwt.NewNumericDate(time.Now()),
 				IssuedAt:  jwt.NewNumericDate(time.Now()),
+			},
+		},
+	}
+}
+
+func newAdminToken(cfg config.IJwtConfig) IAlldayAuth {
+	return &alldayAdmin{
+		alldayAuth: &alldayAuth{
+			cfg: cfg,
+			mapClaims: &alldayMapClaims{
+				Claims: nil,
+				RegisteredClaims: jwt.RegisteredClaims{
+					Issuer:    "alldayshop-api",
+					Subject:   "admin-token",
+					Audience:  []string{"admin"},
+					ExpiresAt: jwtTimeDurationCal(300),
+					NotBefore: jwt.NewNumericDate(time.Now()),
+					IssuedAt:  jwt.NewNumericDate(time.Now()),
+				},
 			},
 		},
 	}
