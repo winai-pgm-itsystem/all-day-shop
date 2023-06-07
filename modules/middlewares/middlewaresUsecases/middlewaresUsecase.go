@@ -4,7 +4,9 @@ import (
 	"github.com/winai-pgm-itsystem/all-day-shop/modules/middlewares/middlewaresRepositories"
 )
 
-type IMiddlewaresUsecase interface{}
+type IMiddlewaresUsecase interface {
+	FindAccessToken(userId string, accessToken string) bool
+}
 
 type middlewaresUsecase struct {
 	middlewaresRepository middlewaresRepositories.IMiddlewaresRepository
@@ -14,4 +16,8 @@ func MiddlewaresRepository(middlewaresRepository middlewaresRepositories.IMiddle
 	return &middlewaresUsecase{
 		middlewaresRepository: middlewaresRepository,
 	}
+}
+
+func (u *middlewaresUsecase) FindAccessToken(userId string, accessToken string) bool {
+	return u.middlewaresRepository.FindAccessToken(userId, accessToken)
 }
