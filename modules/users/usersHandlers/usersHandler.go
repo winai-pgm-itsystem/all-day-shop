@@ -1,6 +1,9 @@
 package usersHandlers
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/winai-pgm-itsystem/all-day-shop/config"
 	"github.com/winai-pgm-itsystem/all-day-shop/modules/entities"
@@ -12,12 +15,13 @@ import (
 type userHandlersErrCode string
 
 const (
-	signUpCustomerErr    userHandlersErrCode = "users-001"
-	signInErr            userHandlersErrCode = "users-002"
-	refreshPassportErr   userHandlersErrCode = "users-003"
-	signOutErr           userHandlersErrCode = "users-004"
-	signUpAdminErr       userHandlersErrCode = "users-005"
-	generateAdminTokenrr userHandlersErrCode = "users-006"
+	signUpCustomerErr     userHandlersErrCode = "users-001"
+	signInErr             userHandlersErrCode = "users-002"
+	refreshPassportErr    userHandlersErrCode = "users-003"
+	signOutErr            userHandlersErrCode = "users-004"
+	signUpAdminErr        userHandlersErrCode = "users-005"
+	generateAdminTokenErr userHandlersErrCode = "users-006"
+	getUserProfileErr     userHandlersErrCode = "users-006"
 )
 
 type IUersHandler interface {
@@ -27,6 +31,7 @@ type IUersHandler interface {
 	SignOut(c *fiber.Ctx) error
 	SignUpAdmin(c *fiber.Ctx) error
 	GenerateAdminToken(c *fiber.Ctx) error
+	GetUserProfile(c *fiber.Ctx) error
 }
 
 type usersHandler struct {
@@ -145,7 +150,7 @@ func (h *usersHandler) GenerateAdminToken(c *fiber.Ctx) error {
 	if err != nil {
 		return entities.NewResponse(c).Error(
 			fiber.ErrInternalServerError.Code,
-			string(generateAdminTokenrr),
+			string(generateAdminTokenErr),
 			err.Error(),
 		).Res()
 	}
@@ -224,4 +229,33 @@ func (h *usersHandler) SignOut(c *fiber.Ctx) error {
 	}
 
 	return entities.NewResponse(c).Success(fiber.StatusOK, nil).Res()
+}
+
+func (h *usersHandler) GetUserProfile(c *fiber.Ctx) error {
+	//Set params
+	userId := strings.Trim(c.Params("user_id"), " ")
+
+	fmt.Print(userId)
+
+	//Get profile
+	result, err := h.usersUsecase.GetUserProfile(userId)
+	if err != nil {
+		switch err.Error() {
+		case "get user failed: sql: no rows in result set":
+			return entities.NewResponse(c).Error(
+				fiber.ErrBadRequest.Code,
+				string(getUserProfileErr),
+				err.Error(),
+			).Res()
+		default:
+			return entities.NewResponse(c).Error(
+				fiber.ErrInternalServerError.Code,
+				string(getUserProfileErr),
+				err.Error(),
+			).Res()
+		}
+	}
+
+	return entities.NewResponse(c).Success(fiber.StatusOK, result).Res()
+
 }
