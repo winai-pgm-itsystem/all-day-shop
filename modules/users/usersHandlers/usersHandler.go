@@ -1,7 +1,6 @@
 package usersHandlers
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
@@ -234,8 +233,6 @@ func (h *usersHandler) SignOut(c *fiber.Ctx) error {
 func (h *usersHandler) GetUserProfile(c *fiber.Ctx) error {
 	//Set params
 	userId := strings.Trim(c.Params("user_id"), " ")
-
-	fmt.Print(userId)
 
 	//Get profile
 	result, err := h.usersUsecase.GetUserProfile(userId)
