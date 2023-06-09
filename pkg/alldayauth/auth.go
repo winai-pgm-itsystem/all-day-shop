@@ -114,6 +114,30 @@ func ParseAdminToken(cfg config.IJwtConfig, tokenString string) (*alldayMapClaim
 
 }
 
+func ParseApiKey(cfg config.IJwtConfig, tokenString string) (*alldayMapClaims, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &alldayMapClaims{}, func(t *jwt.Token) (interface{}, error) {
+		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("signing method is invalid")
+		}
+		return cfg.ApiKey(), nil
+	})
+	if err != nil {
+		if errors.Is(err, jwt.ErrTokenMalformed) {
+			return nil, fmt.Errorf("token format is invalid")
+		} else if errors.Is(err, jwt.ErrTokenExpired) {
+			return nil, fmt.Errorf("token had expired")
+		} else {
+			return nil, fmt.Errorf("parse token failed: %v", err)
+		}
+	}
+
+	if claims, ok := token.Claims.(*alldayMapClaims); ok {
+		return claims, nil
+	} else {
+		return nil, fmt.Errorf("claims type is invalid")
+	}
+}
+
 func RepeatToken(cfg config.IJwtConfig, claims *users.UserClaims, exp int64) string {
 	obj := &alldayAuth{
 		cfg: cfg,
