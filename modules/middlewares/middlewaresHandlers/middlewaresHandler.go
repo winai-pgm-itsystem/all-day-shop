@@ -10,6 +10,7 @@ import (
 	"github.com/winai-pgm-itsystem/all-day-shop/modules/entities"
 	"github.com/winai-pgm-itsystem/all-day-shop/modules/middlewares/middlewaresUsecases"
 	"github.com/winai-pgm-itsystem/all-day-shop/pkg/alldayauth"
+	"github.com/winai-pgm-itsystem/all-day-shop/pkg/utils"
 )
 
 type middlewareHandlerErrCode string
@@ -27,7 +28,7 @@ type IMiddlewaresHandler interface {
 	Logger() fiber.Handler
 	JwtAuth() fiber.Handler
 	ParamsCheck() fiber.Handler
-	Authorize() fiber.Handler
+	Authorize(expectRoleId ...int) fiber.Handler
 }
 
 type middlewaresHandler struct {
@@ -138,6 +139,21 @@ func (h *middlewaresHandler) Authorize(expectRoleId ...int) fiber.Handler {
 			sum += v
 		}
 
-		return c.Next()
+		expectedValueBinary := utils.BinaryConverter(sum, len(roles))
+		userValueBinary := utils.BinaryConverter(userRoleId, len(roles))
+
+		//user ->      0 1 0
+		//expected ->  1 1 0
+		for i := range userValueBinary {
+			if userValueBinary[i]&expectedValueBinary[i] == 1 {
+				return c.Next()
+			}
+		}
+
+		return entities.NewResponse(c).Error(
+			fiber.ErrUnauthorized.Code,
+			string(authorizeErr),
+			"no permission to access",
+		).Res()
 	}
 }
