@@ -30,17 +30,18 @@ type alldayLogger struct {
 	Response   any    `json:"response"`
 }
 
-func InitAlldayLogger(c *fiber.Ctx, res any) IAlldayLogger {
+func InitAlldayLogger(c *fiber.Ctx, code int, res any) IAlldayLogger {
 	log := &alldayLogger{
 		Time:       time.Now().Local().Format("2006-01-02 15:04:05"),
 		Ip:         c.IP(),
 		Method:     c.Method(),
 		Path:       c.Path(),
-		StatusCode: c.Response().StatusCode(),
+		StatusCode: code,
 	}
 	log.SetQuery(c)
 	log.SetBody(c)
 	log.SetResponse(res)
+
 	return log
 }
 

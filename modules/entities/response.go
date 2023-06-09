@@ -33,7 +33,7 @@ func NewResponse(c *fiber.Ctx) IResponse {
 func (r *Response) Success(code int, data any) IResponse {
 	r.StatusCode = code
 	r.Data = data
-	alldaylogger.InitAlldayLogger(r.Context, &r.Data).Print().Save()
+	alldaylogger.InitAlldayLogger(r.Context, code, &r.Data).Print().Save()
 	return r
 }
 func (r *Response) Error(code int, tractId, msg string) IResponse {
@@ -43,7 +43,7 @@ func (r *Response) Error(code int, tractId, msg string) IResponse {
 		Msg:     msg,
 	}
 	r.IsError = true
-	alldaylogger.InitAlldayLogger(r.Context, &r.ErrorRes).Print().Save()
+	alldaylogger.InitAlldayLogger(r.Context, code, &r.ErrorRes).Print().Save()
 	return r
 }
 func (r *Response) Res() error {
