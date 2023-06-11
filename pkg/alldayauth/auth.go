@@ -29,6 +29,10 @@ type alldayAdmin struct {
 	*alldayAuth
 }
 
+type alldayApiKey struct {
+	*alldayAuth
+}
+
 type alldayMapClaims struct {
 	Claims *users.UserClaims `josn:"claims"`
 	jwt.RegisteredClaims
@@ -39,6 +43,10 @@ type IAlldayAuth interface {
 }
 
 type IAlldayAdmin interface {
+	SignToken() string
+}
+
+type IAlldayApiKey interface {
 	SignToken() string
 }
 
@@ -59,6 +67,12 @@ func (a *alldayAuth) SignToken() string {
 func (a *alldayAdmin) SignToken() string {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, a.mapClaims)
 	ss, _ := token.SignedString(a.cfg.AdminKey())
+	return ss
+}
+
+func (a *alldayApiKey) SignToken() string {
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, a.mapClaims)
+	ss, _ := token.SignedString(a.cfg.ApiKey())
 	return ss
 }
 
@@ -164,6 +178,8 @@ func NewAlldayAuth(tokenType TonkenType, cfg config.IJwtConfig, claims *users.Us
 		return newRefreshToken(cfg, claims), nil
 	case Admin:
 		return newAdminToken(cfg), nil
+	case ApiKey:
+		return newApiKey(cfg), nil
 	default:
 		return nil, fmt.Errorf("unkhnow token type")
 	}
@@ -214,6 +230,25 @@ func newAdminToken(cfg config.IJwtConfig) IAlldayAuth {
 					Subject:   "admin-token",
 					Audience:  []string{"admin"},
 					ExpiresAt: jwtTimeDurationCal(300),
+					NotBefore: jwt.NewNumericDate(time.Now()),
+					IssuedAt:  jwt.NewNumericDate(time.Now()),
+				},
+			},
+		},
+	}
+}
+
+func newApiKey(cfg config.IJwtConfig) IAlldayAuth {
+	return &alldayApiKey{
+		alldayAuth: &alldayAuth{
+			cfg: cfg,
+			mapClaims: &alldayMapClaims{
+				Claims: nil,
+				RegisteredClaims: jwt.RegisteredClaims{
+					Issuer:    "alldayshop-api",
+					Subject:   "api-key",
+					Audience:  []string{"admin", "customer"},
+					ExpiresAt: jwt.NewNumericDate(time.Now().AddDate(2, 0, 0)),
 					NotBefore: jwt.NewNumericDate(time.Now()),
 					IssuedAt:  jwt.NewNumericDate(time.Now()),
 				},

@@ -17,6 +17,7 @@ import (
 type IModuleFactory interface {
 	MonitorModule()
 	UserModule()
+	AppinfoModule()
 }
 
 type moduleFactory struct {
@@ -69,7 +70,7 @@ func (m *moduleFactory) AppinfoModule() {
 	handler := appinfoHandlers.AppinfoHandler(m.s.cfg, usecase)
 
 	router := m.r.Group("/appinfo")
-	_ = router
 
-	_ = handler
+	router.Get("/apikey", m.mid.JwtAuth(), m.mid.Authorize(2), handler.GenerateApiKey)
+
 }
