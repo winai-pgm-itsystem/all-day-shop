@@ -5,6 +5,8 @@ import (
 	"github.com/winai-pgm-itsystem/all-day-shop/modules/appinfo/appinfoHandlers"
 	"github.com/winai-pgm-itsystem/all-day-shop/modules/appinfo/appinfoRepositories"
 	"github.com/winai-pgm-itsystem/all-day-shop/modules/appinfo/appinfoUsecases"
+	"github.com/winai-pgm-itsystem/all-day-shop/modules/files/filesHandlers"
+	"github.com/winai-pgm-itsystem/all-day-shop/modules/files/filesUsecases"
 	"github.com/winai-pgm-itsystem/all-day-shop/modules/middlewares/middlewaresHandlers"
 	"github.com/winai-pgm-itsystem/all-day-shop/modules/middlewares/middlewaresRepositories"
 	"github.com/winai-pgm-itsystem/all-day-shop/modules/middlewares/middlewaresUsecases"
@@ -18,6 +20,7 @@ type IModuleFactory interface {
 	MonitorModule()
 	UserModule()
 	AppinfoModule()
+	FileModule()
 }
 
 type moduleFactory struct {
@@ -77,5 +80,16 @@ func (m *moduleFactory) AppinfoModule() {
 	router.Post("/categories", m.mid.JwtAuth(), m.mid.Authorize(2), handler.AddCategory)
 
 	router.Delete("/:category_id/categories", m.mid.JwtAuth(), m.mid.Authorize(2), handler.RemoveCategory)
+
+}
+
+func (m *moduleFactory) FileModule() {
+
+	usecase := filesUsecases.FilesUsecase(m.s.cfg)
+	handler := filesHandlers.FilesHandler(m.s.cfg, usecase)
+
+	router := m.r.Group("/appinfo")
+	_ = router
+	_ = handler
 
 }
