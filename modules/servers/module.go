@@ -88,8 +88,9 @@ func (m *moduleFactory) FileModule() {
 	usecase := filesUsecases.FilesUsecase(m.s.cfg)
 	handler := filesHandlers.FilesHandler(m.s.cfg, usecase)
 
-	router := m.r.Group("/appinfo")
-	_ = router
-	_ = handler
+	router := m.r.Group("/files")
+
+	router.Post("/upload", m.mid.JwtAuth(), m.mid.Authorize(2), handler.UploadFiles)
+	router.Patch("/delete", m.mid.JwtAuth(), m.mid.Authorize(2), handler.DeleteFile)
 
 }
