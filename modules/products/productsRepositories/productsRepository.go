@@ -9,10 +9,12 @@ import (
 	"github.com/winai-pgm-itsystem/all-day-shop/modules/entities"
 	"github.com/winai-pgm-itsystem/all-day-shop/modules/files/filesUsecases"
 	"github.com/winai-pgm-itsystem/all-day-shop/modules/products"
+	"github.com/winai-pgm-itsystem/all-day-shop/modules/products/productsPatterns"
 )
 
 type IProductsRepository interface {
 	FindOneProduct(productId string) (*products.Product, error)
+	FindProduct(req *products.ProductFilter) ([]*products.Product, int)
 }
 
 type productsRepository struct {
@@ -85,4 +87,13 @@ func (r *productsRepository) FindOneProduct(productId string) (*products.Product
 	}
 	return product, nil
 
+}
+
+func (r *productsRepository) FindProduct(req *products.ProductFilter) ([]*products.Product, int) {
+	builder := productsPatterns.FindProductBuilder(r.db, req)
+	engineer := productsPatterns.FindProductEngineer(builder)
+
+	result := engineer.FindProduct().Result()
+	count := engineer.CountProduct().Count()
+	return result, count
 }
