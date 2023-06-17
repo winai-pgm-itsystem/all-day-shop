@@ -11,6 +11,9 @@ import (
 	"github.com/winai-pgm-itsystem/all-day-shop/modules/middlewares/middlewaresRepositories"
 	"github.com/winai-pgm-itsystem/all-day-shop/modules/middlewares/middlewaresUsecases"
 	"github.com/winai-pgm-itsystem/all-day-shop/modules/monitor/monitorHandlers"
+	"github.com/winai-pgm-itsystem/all-day-shop/modules/products/productsHandlers"
+	"github.com/winai-pgm-itsystem/all-day-shop/modules/products/productsRepositories"
+	"github.com/winai-pgm-itsystem/all-day-shop/modules/products/productsUsecases"
 	"github.com/winai-pgm-itsystem/all-day-shop/modules/users/usersHandlers"
 	"github.com/winai-pgm-itsystem/all-day-shop/modules/users/usersRepositories"
 	"github.com/winai-pgm-itsystem/all-day-shop/modules/users/usersUsecases"
@@ -20,7 +23,8 @@ type IModuleFactory interface {
 	MonitorModule()
 	UserModule()
 	AppinfoModule()
-	FileModule()
+	FilesModule()
+	ProductsModule()
 }
 
 type moduleFactory struct {
@@ -83,7 +87,7 @@ func (m *moduleFactory) AppinfoModule() {
 
 }
 
-func (m *moduleFactory) FileModule() {
+func (m *moduleFactory) FilesModule() {
 
 	usecase := filesUsecases.FilesUsecase(m.s.cfg)
 	handler := filesHandlers.FilesHandler(m.s.cfg, usecase)
@@ -92,5 +96,18 @@ func (m *moduleFactory) FileModule() {
 
 	router.Post("/upload", m.mid.JwtAuth(), m.mid.Authorize(2), handler.UploadFiles)
 	router.Patch("/delete", m.mid.JwtAuth(), m.mid.Authorize(2), handler.DeleteFile)
+
+}
+
+func (m *moduleFactory) ProductsModule() {
+
+	filesUsecase := filesUsecases.FilesUsecase(m.s.cfg)
+	productRepository := productsRepositories.ProductsRepository(m.s.db, m.s.cfg, filesUsecase)
+	productsUsecase := productsUsecases.ProductsUsecase(productRepository)
+	productsHandler := productsHandlers.ProductsHandler(m.s.cfg, productsUsecase, filesUsecase)
+
+	router := m.r.Group("/products")
+
+	router.Get("/:product_id", m.mid.ApiKeyAuth(), productsHandler.FindOneProduct)
 
 }
