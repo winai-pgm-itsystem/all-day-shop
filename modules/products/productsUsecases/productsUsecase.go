@@ -17,17 +17,17 @@ type IProductsUsecase interface {
 }
 
 type productsUsecase struct {
-	productsRepositories productsRepositories.IProductsRepository
+	productsRepository productsRepositories.IProductsRepository
 }
 
-func ProductsUsecase(productsRepositories productsRepositories.IProductsRepository) IProductsUsecase {
+func ProductsUsecase(productsRepository productsRepositories.IProductsRepository) IProductsUsecase {
 	return &productsUsecase{
-		productsRepositories: productsRepositories,
+		productsRepository: productsRepository,
 	}
 }
 
 func (u *productsUsecase) FindOneProduct(productId string) (*products.Product, error) {
-	product, err := u.productsRepositories.FindOneProduct(productId)
+	product, err := u.productsRepository.FindOneProduct(productId)
 	if err != nil {
 		return nil, err
 	}
@@ -35,7 +35,7 @@ func (u *productsUsecase) FindOneProduct(productId string) (*products.Product, e
 }
 
 func (u *productsUsecase) FindProduct(req *products.ProductFilter) *entities.PaginateRes {
-	products, count := u.productsRepositories.FindProduct(req)
+	products, count := u.productsRepository.FindProduct(req)
 
 	return &entities.PaginateRes{
 		Data:      products,
@@ -47,7 +47,7 @@ func (u *productsUsecase) FindProduct(req *products.ProductFilter) *entities.Pag
 }
 
 func (u *productsUsecase) AddProduct(req *products.Product) (*products.Product, error) {
-	product, err := u.productsRepositories.InsertProduct(req)
+	product, err := u.productsRepository.InsertProduct(req)
 	if err != nil {
 		return nil, err
 	}
@@ -56,7 +56,7 @@ func (u *productsUsecase) AddProduct(req *products.Product) (*products.Product, 
 }
 
 func (u *productsUsecase) UpdateProduct(req *products.Product) (*products.Product, error) {
-	product, err := u.productsRepositories.UpdateProduct(req)
+	product, err := u.productsRepository.UpdateProduct(req)
 	if err != nil {
 		return nil, err
 	}
@@ -65,7 +65,7 @@ func (u *productsUsecase) UpdateProduct(req *products.Product) (*products.Produc
 }
 
 func (u *productsUsecase) DeleteProduct(productId string) error {
-	if err := u.productsRepositories.DeleteProduct(productId); err != nil {
+	if err := u.productsRepository.DeleteProduct(productId); err != nil {
 		return err
 	}
 	return nil

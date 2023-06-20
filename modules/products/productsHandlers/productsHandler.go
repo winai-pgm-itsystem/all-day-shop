@@ -33,23 +33,23 @@ type IProductsHandler interface {
 }
 
 type productsHandler struct {
-	cfg              config.IConfig
-	productsUsecases productsUsecases.IProductsUsecase
-	filesUsecases    filesUsecases.IFilesUsecase
+	cfg             config.IConfig
+	productsUsecase productsUsecases.IProductsUsecase
+	filesUsecase    filesUsecases.IFilesUsecase
 }
 
-func ProductsHandler(cfg config.IConfig, productsUsecases productsUsecases.IProductsUsecase, filesUsecases filesUsecases.IFilesUsecase) IProductsHandler {
+func ProductsHandler(cfg config.IConfig, productsUsecase productsUsecases.IProductsUsecase, filesUsecase filesUsecases.IFilesUsecase) IProductsHandler {
 	return &productsHandler{
-		cfg:              cfg,
-		productsUsecases: productsUsecases,
-		filesUsecases:    filesUsecases,
+		cfg:             cfg,
+		productsUsecase: productsUsecase,
+		filesUsecase:    filesUsecase,
 	}
 }
 
 func (h *productsHandler) FindOneProduct(c *fiber.Ctx) error {
 
 	productId := strings.Trim(c.Params("product_id"), " ")
-	product, err := h.productsUsecases.FindOneProduct(productId)
+	product, err := h.productsUsecase.FindOneProduct(productId)
 	if err != nil {
 		return entities.NewResponse(c).Error(
 			fiber.ErrInternalServerError.Code,
@@ -88,7 +88,7 @@ func (h *productsHandler) FindProduct(c *fiber.Ctx) error {
 
 	}
 
-	products := h.productsUsecases.FindProduct(req)
+	products := h.productsUsecase.FindProduct(req)
 	return entities.NewResponse(c).Success(fiber.StatusOK, products).Res()
 }
 
@@ -112,7 +112,7 @@ func (h *productsHandler) AddProduct(c *fiber.Ctx) error {
 		).Res()
 	}
 
-	product, err := h.productsUsecases.AddProduct(req)
+	product, err := h.productsUsecase.AddProduct(req)
 	if err != nil {
 		return entities.NewResponse(c).Error(
 			fiber.ErrInternalServerError.Code,
@@ -139,7 +139,7 @@ func (h *productsHandler) UpdateProduct(c *fiber.Ctx) error {
 	}
 	req.Id = productId
 
-	product, err := h.productsUsecases.UpdateProduct(req)
+	product, err := h.productsUsecase.UpdateProduct(req)
 	if err != nil {
 		return entities.NewResponse(c).Error(
 			fiber.ErrInternalServerError.Code,
@@ -154,7 +154,7 @@ func (h *productsHandler) UpdateProduct(c *fiber.Ctx) error {
 func (h *productsHandler) DeleteProduct(c *fiber.Ctx) error {
 	productId := strings.Trim(c.Params("product_id"), " ")
 
-	product, err := h.productsUsecases.FindOneProduct(productId)
+	product, err := h.productsUsecase.FindOneProduct(productId)
 	if err != nil {
 		return entities.NewResponse(c).Error(
 			fiber.ErrInternalServerError.Code,
@@ -169,7 +169,7 @@ func (h *productsHandler) DeleteProduct(c *fiber.Ctx) error {
 			Destination: fmt.Sprintf("images/products/%s", p.FileName),
 		})
 	}
-	if err := h.filesUsecases.DeleteFileOnGCP(deleteFileReq); err != nil {
+	if err := h.filesUsecase.DeleteFileOnGCP(deleteFileReq); err != nil {
 		return entities.NewResponse(c).Error(
 			fiber.ErrInternalServerError.Code,
 			string(deleteProductErr),
@@ -177,7 +177,7 @@ func (h *productsHandler) DeleteProduct(c *fiber.Ctx) error {
 		).Res()
 	}
 
-	if err := h.productsUsecases.DeleteProduct(productId); err != nil {
+	if err := h.productsUsecase.DeleteProduct(productId); err != nil {
 		return entities.NewResponse(c).Error(
 			fiber.ErrInternalServerError.Code,
 			string(deleteProductErr),

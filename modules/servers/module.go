@@ -11,6 +11,9 @@ import (
 	"github.com/winai-pgm-itsystem/all-day-shop/modules/middlewares/middlewaresRepositories"
 	"github.com/winai-pgm-itsystem/all-day-shop/modules/middlewares/middlewaresUsecases"
 	"github.com/winai-pgm-itsystem/all-day-shop/modules/monitor/monitorHandlers"
+	"github.com/winai-pgm-itsystem/all-day-shop/modules/orders/ordersHandlers"
+	"github.com/winai-pgm-itsystem/all-day-shop/modules/orders/ordersRepositories"
+	"github.com/winai-pgm-itsystem/all-day-shop/modules/orders/ordersUsecases"
 	"github.com/winai-pgm-itsystem/all-day-shop/modules/products/productsHandlers"
 	"github.com/winai-pgm-itsystem/all-day-shop/modules/products/productsRepositories"
 	"github.com/winai-pgm-itsystem/all-day-shop/modules/products/productsUsecases"
@@ -25,6 +28,7 @@ type IModuleFactory interface {
 	AppinfoModule()
 	FilesModule()
 	ProductsModule()
+	OrdersModule()
 }
 
 type moduleFactory struct {
@@ -115,5 +119,18 @@ func (m *moduleFactory) ProductsModule() {
 	router.Patch("/:product_id", m.mid.JwtAuth(), m.mid.Authorize(2), productsHandler.UpdateProduct)
 
 	router.Delete("/:product_id", m.mid.JwtAuth(), m.mid.Authorize(2), productsHandler.DeleteProduct)
+
+}
+
+func (m *moduleFactory) OrdersModule() {
+	filesUsecase := filesUsecases.FilesUsecase(m.s.cfg)
+	productRepository := productsRepositories.ProductsRepository(m.s.db, m.s.cfg, filesUsecase)
+
+	ordersRepository := ordersRepositories.OrdersRepository(m.s.db)
+	ordersUsecase := ordersUsecases.OrdersUsecase(ordersRepository, productRepository)
+	ordersHandler := ordersHandlers.OrdersHandler(m.s.cfg, ordersUsecase)
+
+	router := m.r.Group("/orders")
+	router.Get("/:order_id", m.mid.JwtAuth(), ordersHandler.FindOneOrder)
 
 }
