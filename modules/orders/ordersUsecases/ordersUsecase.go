@@ -1,17 +1,20 @@
 package ordersUsecases
 
 import (
+	"fmt"
 	"math"
 
 	"github.com/winai-pgm-itsystem/all-day-shop/modules/entities"
 	"github.com/winai-pgm-itsystem/all-day-shop/modules/orders"
 	"github.com/winai-pgm-itsystem/all-day-shop/modules/orders/ordersRepositories"
 	"github.com/winai-pgm-itsystem/all-day-shop/modules/products/productsRepositories"
+	"github.com/winai-pgm-itsystem/all-day-shop/pkg/utils"
 )
 
 type IOrdersUsecase interface {
 	FindOneOrder(orderId string) (*orders.Order, error)
 	FindOrder(req *orders.OrderFilter) *entities.PaginateRes
+	InsertOrder(req *orders.Order) (*orders.Order, error)
 }
 
 type ordersUsecase struct {
@@ -43,4 +46,35 @@ func (u *ordersUsecase) FindOrder(req *orders.OrderFilter) *entities.PaginateRes
 		TotalItem: count,
 		TotalPage: int(math.Ceil(float64(count) / float64(req.Limit))),
 	}
+}
+
+func (u *ordersUsecase) InsertOrder(req *orders.Order) (*orders.Order, error) {
+	// Check if products is exists
+	for i := range req.Products {
+		if req.Products[i].Product == nil {
+			return nil, fmt.Errorf("product is nil")
+		}
+
+		prod, err := u.productsRepository.FindOneProduct(req.Products[i].Product.Id)
+		if err != nil {
+			return nil, err
+		}
+		utils.Debug(prod)
+
+		// Set price
+		req.TotalPaid += req.Products[i].Product.Price * float64(req.Products[i].Qty)
+		req.Products[i].Product = prod
+	}
+
+	orderId, err := u.ordersRepository.InsertOrder(req)
+	if err != nil {
+		return nil, err
+	}
+
+	order, err := u.ordersRepository.FindOneOrder(orderId)
+	if err != nil {
+		return nil, err
+	}
+
+	return order, nil
 }
