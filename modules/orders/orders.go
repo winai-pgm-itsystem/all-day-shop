@@ -1,11 +1,23 @@
 package orders
 
-import "github.com/winai-pgm-itsystem/all-day-shop/modules/products"
+import (
+	"github.com/winai-pgm-itsystem/all-day-shop/modules/entities"
+	"github.com/winai-pgm-itsystem/all-day-shop/modules/products"
+)
+
+type OrderFilter struct {
+	Search    string `query:"search"`
+	Status    string `query:"status"`
+	StartDate string `query:"start_date"`
+	EndDate   string `query:"end_date"`
+	*entities.PaginationReq
+	*entities.SortReq
+}
 
 type Order struct {
 	Id           string           `db:"id" json:"id"`
 	UserId       string           `db:"user_id" json:"user_id"`
-	TransferSlip *TransferSlip    `db:"transfer_slop" json:"transfer_slop"`
+	TransferSlip *TransferSlip    `db:"transfer_slip" json:"transfer_slip"`
 	Products     []*ProductsOrder `json:"products"`
 	Address      string           `db:"address" json:"address"`
 	Contact      string           `db:"contact" json:"contact"`
