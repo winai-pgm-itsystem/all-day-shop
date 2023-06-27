@@ -13,7 +13,7 @@ allday shop is a mini REST API e-commerce project that made by Golang
 
 <img alt="schema" src="./screenshots/schema0.0.3.png"/>
 
-<h2>Start PostgreSQLon Docker 🐋</h2>
+<h2>Start PostgreSQL on Docker 🐋</h2>
 
 ```bash
 docker run --name allday_db_test -e POSTGRES_USER=allday -e POSTGRES_PASSWORD=123456 -p 4444:5432 -d postgres:alpine
